@@ -1,132 +1,161 @@
-import { useStore } from "@/store/auth";
-import { Feather, MaterialIcons } from "@expo/vector-icons";
-import { Link, router, Tabs } from "expo-router";
+import { Link, router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import React from "react";
-import { Pressable, Text, View } from "react-native";
+import {
+  Alert,
+  FlatList,
+  TouchableOpacity,
+  Pressable,
+  Text,
+  View,
+} from "react-native";
+import { useStore } from "../store/auth";
+import { useCategories } from "../store/categories";
 
-export default function _layout() {
-  const { profile }: any = useStore();
+export default function Index() {
+  const { profile, setIsLoggedIn, setProfile }: any = useStore();
+  const { categories }: any = useCategories();
+
   const LogOutHandler = async () => {
-    await SecureStore.deleteItemAsync("token");
-    router.replace("/login");
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          await SecureStore.deleteItemAsync("token");
+          setIsLoggedIn(false);
+          setProfile(null);
+          router.replace("/(auth)/login");
+        },
+      },
+    ]);
   };
+
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: true,
-        tabBarActiveTintColor: "#000",
-        tabBarInactiveTintColor: "#888",
-        tabBarLabelStyle: { fontSize: 12 },
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "flex-start",
+        alignItems: "center",
+        gap: 10,
+        padding: 20,
+        flexDirection: "row",
+        flexWrap: "wrap",
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          headerTitle: "Home",
-          tabBarLabel: "Home",
-          headerLeft() {
-            return (
-              <View
-                style={{
-                  flexDirection: "column",
-                  gap: 2,
-                  paddingHorizontal: 20,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 10,
-                  }}
-                >
-                  Welcome
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 18,
-                    fontWeight: "bold",
-                  }}
-                >
-                  {profile?.id ? profile?.FirstName : "Guest"}
-                </Text>
-              </View>
-            );
-          },
-          headerRight() {
-            return (
-              <View
-                style={{
-                  gap: 10,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  paddingHorizontal: 20,
-                }}
-              >
-                <Pressable
-                  onPress={() => router.push("./(standalone)/CreateItem")}
-                >
-                  <Feather name="plus" size={24} color="black" />
-                </Pressable>
-                {profile?.id ? (
-                  <Pressable
-                    style={{
-                      backgroundColor: "black",
-                      padding: 5,
-                      borderRadius: 5,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                    onPress={LogOutHandler}
-                  >
-                    <Text
-                      style={{
-                        color: "white",
-                      }}
-                    >
-                      Log Out
-                    </Text>
-                  </Pressable>
-                ) : (
-                  <Link
-                    href="/(auth)/login"
-                    style={{
-                      backgroundColor: "black",
-                      padding: 10,
-                      borderRadius: 10,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "white",
-                    }}
-                  >
-                    Login
-                  </Link>
-                )}
-              </View>
-            );
-          },
-          tabBarIcon: ({ color, size }) => (
-            <Feather name="home" color={color} size={size ?? 24} />
-          ),
+      {/*welcome+Logout */}
+      {profile?.id ? (
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 10,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: "bold",
+            }}
+          >
+            Welcome {profile?.email}
+          </Text>
+          <Pressable
+            style={{
+              backgroundColor: "black",
+              padding: 10,
+              borderRadius: 10,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            onPress={LogOutHandler}
+          >
+            <Text
+              style={{
+                color: "white",
+                fontSize: 18,
+              }}
+            >
+              Log Out
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
+      {/* Categories List */}
+      <FlatList
+        data={categories}
+        keyExtractor={(item) => item.id.toString()}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{
+          gap: 10,
+          paddingHorizontal: 10,
+          paddingVertical: 5,
         }}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={{
+              backgroundColor: "#cfb8b8",
+              padding: 15,
+              borderRadius: 10,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            onPress={() =>
+              router.push(`./(standalone)/Items?categoryId=${item.id}`)
+            }
+          >
+            <Text style={{ fontSize: 18, fontWeight: "600" }}>{item.name}</Text>
+          </TouchableOpacity>
+        )}
       />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Profile",
-          headerTitle: "Your Profile",
-          tabBarLabel: "Profile",
-          tabBarIcon: ({ color, size }) => (
-            <MaterialIcons
-              name="person-outline"
-              color={color}
-              size={size ?? 24}
-            />
-          ),
+    </View>
+  );
+}
+<View
+  style={{
+    backgroundColor: "#cfb8b8ff",
+    padding: 10,
+    borderRadius: 10,
+  }}
+>
+  <View>
+    <Link
+      href="/(auth)/login"
+      style={{
+        padding: 10,
+        backgroundColor: "black",
+        borderRadius: 10,
+        alignItems: "center",
+      }}
+    >
+      <Text
+        style={{
+          color: "white",
+          fontSize: 18,
         }}
-      />
-    </Tabs>
+      >
+        Go to Login
+      </Text>
+    </Link>
+    <Link
+      href="./(auth)/register"
+      style={{
+        padding: 10,
+        backgroundColor: "black",
+        borderRadius: 10,
+        alignItems: "center",
+      }}
+    >
+      <Text style={{ color: "white", fontSize: 18 }}>Go to Register</Text>
+    </Link>
+  </View>
+</View>;
+
   );
 }
     
